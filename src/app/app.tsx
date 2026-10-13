@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { Candidate, Sheet, Track } from "@/lib/types";
 
 type Playlist = { id: string; name: string; tracks: number; image?: string };
-type Session = { configured: boolean; loggedIn: boolean; playlists: Playlist[] };
+type Session = { youtube?: boolean; configured: boolean; loggedIn: boolean; playlists: Playlist[] };
 
 const SOURCE_NAMES: Record<string, string> = {
   accordiespartiti: "Accordi e Spartiti",
@@ -51,7 +51,7 @@ export function App() {
     fetch("/api/spotify/playlists")
       .then((r) => r.json())
       .then(setSession)
-      .catch(() => setSession({ configured: false, loggedIn: false, playlists: [] }));
+      .catch(() => setSession({ youtube: false, configured: false, loggedIn: false, playlists: [] }));
   }, []);
 
   useEffect(() => {
@@ -116,6 +116,7 @@ function InputStep({
   onStart: (b: { playlist: string } | { list: string }) => Promise<void>;
 }) {
   const [playlist, setPlaylist] = useState("");
+  const [youtube, setYoutube] = useState("");
   const [list, setList] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -129,7 +130,39 @@ function InputStep({
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <section className="rounded-lg border border-stone-200 bg-white p-5">
+        <h2 className="text-lg font-medium">From a YouTube playlist</h2>
+        <p className="mt-1 text-sm text-stone-600">
+          Any public or unlisted playlist, no login needed. Make one together, then paste its link here.
+        </p>
+        {session && session.youtube === false ? (
+          <p className="mt-3 text-sm text-amber-700">
+            YouTube is not set up on this server (missing <code>YOUTUBE_API_KEY</code>).
+          </p>
+        ) : (
+          <>
+            <label className="mt-3 block text-sm">
+              <span className="text-stone-600">Playlist link</span>
+              <input
+                value={youtube}
+                onChange={(e) => setYoutube(e.target.value)}
+                placeholder="https://www.youtube.com/playlist?list=…"
+                className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-sm"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={busy || !youtube.trim()}
+              onClick={() => run({ playlist: youtube })}
+              className="mt-3 rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {busy ? "Loading…" : "Load playlist"}
+            </button>
+          </>
+        )}
+      </section>
+
       <section className="rounded-lg border border-stone-200 bg-white p-5">
         <h2 className="text-lg font-medium">From a Spotify playlist</h2>
         {session && !session.configured && (

@@ -4,7 +4,7 @@ Paste a Spotify playlist (or a list of songs), get a PDF songbook with chords an
 
 ## How it works
 
-1. **Track list**: Spotify login (the 2026 API only lets an app read the logged-in user's own playlists) or a pasted `Artist - Title` list. Variant markers are stripped before searching, so "Albachiara - Live 1990" by "Vasco Rossi, Fiorello" looks up "Albachiara" by Vasco Rossi.
+1. **Track list**: a YouTube playlist link (public or unlisted, no login; video titles like "Vasco Rossi - Albachiara (Official Video)" are parsed into artist and title, with the channel name as a hint), Spotify login (the 2026 API only lets an app read the logged-in user's own playlists), or a pasted `Artist - Title` list. Variant markers are stripped before searching, so "Albachiara - Live 1990" by "Vasco Rossi, Fiorello" looks up "Albachiara" by Vasco Rossi.
 2. **Chords and lyrics**: one adapter per chord site, searched in parallel, best match wins:
    - Accordi e Spartiti (Italian; chord names converted from DO/RE/MI to C/D/E)
    - Ultimate Guitar
@@ -22,6 +22,11 @@ npm run dev
 
 Open http://localhost:3000.
 
+### YouTube setup
+
+1. In https://console.cloud.google.com create a project, enable **YouTube Data API v3**, and create an API key (restrict it to that API).
+2. Put it in `.env.local` as `YOUTUBE_API_KEY`. The free quota (10,000 units a day) covers roughly 5,000 playlist loads.
+
 ### Spotify setup
 
 1. Create an app at https://developer.spotify.com/dashboard.
@@ -31,7 +36,7 @@ Open http://localhost:3000.
 
 ## Deploy to Vercel
 
-`vercel deploy`. Set `SPOTIFY_CLIENT_ID` and `SPOTIFY_REDIRECT_URI` (`https://<your-domain>/api/spotify/callback`) in the project's environment variables. PDF rendering uses `@sparticuz/chromium` on Vercel and the locally downloaded Chrome from the `puppeteer` dev dependency on your machine. Fetched pages are cached in the Vercel Runtime Cache on Vercel and in `.cache/` locally.
+`vercel deploy`. Set `YOUTUBE_API_KEY`, `SPOTIFY_CLIENT_ID` and `SPOTIFY_REDIRECT_URI` (`https://<your-domain>/api/spotify/callback`) in the project's environment variables. PDF rendering uses `@sparticuz/chromium` on Vercel and the locally downloaded Chrome from the `puppeteer` dev dependency on your machine. Fetched pages are cached in the Vercel Runtime Cache on Vercel and in `.cache/` locally.
 
 ## Notes
 

@@ -8,7 +8,7 @@ import * as cheerio from "cheerio";
  * Covers the English (Spotify) and Italian conventions.
  */
 const VARIANT_WORDS =
-  "remaster(?:ed|izzat[oa])?|live|dal vivo|in concerto|version|versione|vers\\.|edit|mix|remix|feat\\.?|ft\\.?|with|con|bonus|mono|stereo|demo|acoustic|acustic[oa]|unplugged|radio|single|album|deluxe|anniversary|anniversario|instrumental|strumentale|karaoke|cover|session|take|alternate|alternative|explicit|clean|sped up|slowed|original|originale|soundtrack|colonna sonora|ost|sanremo|studio|mastered|reissue|expanded|edition|edizione|extended|short|long|re-?recorded|rerecorded|nuova|new|\\d{4}";
+  "remaster(?:ed|izzat[oa])?|live|dal vivo|in concerto|version|versione|vers\\.|edit|mix|remix|feat\\.?|ft\\.?|with|con|bonus|mono|stereo|demo|acoustic|acustic[oa]|unplugged|radio|single|album|deluxe|anniversary|anniversario|instrumental|strumentale|karaoke|cover|session|take|alternate|alternative|explicit|clean|sped up|slowed|original|originale|soundtrack|colonna sonora|ost|sanremo|studio|mastered|reissue|expanded|edition|edizione|extended|short|long|re-?recorded|rerecorded|nuova|new|official|ufficiale|video|videoclip|clip|lyrics?|testo|audio|hd|hq|4k|visuali[sz]er|\\d{4}";
 
 /** "(Live at Wembley)", "[2011 Remaster]" */
 const BRACKETED_VARIANT = new RegExp(`\\s*[\\(\\[][^\\)\\]]*?\\b(?:${VARIANT_WORDS})\\b[^\\)\\]]*[\\)\\]]`, "gi");
@@ -97,7 +97,9 @@ export function matchScore(
 ): number {
   const t = similarity(track.title, cand.title);
   const a = artistSimilarity(track.artist, cand.artist);
-  return Math.round((0.6 * t + 0.4 * a) * 1000) / 1000;
+  // Lists and video titles sometimes come as "Title - Artist"; a swapped reading counts almost as much.
+  const swapped = 0.6 * similarity(track.artist, cand.title) + 0.4 * artistSimilarity(track.title, cand.artist);
+  return Math.round(Math.max(0.6 * t + 0.4 * a, 0.95 * swapped) * 1000) / 1000;
 }
 
 const SOLFEGE: Record<string, string> = {
