@@ -95,14 +95,20 @@ export function artistFromChannel(channel: string): string {
 export function cleanVideoTitle(title: string): string {
   return canonicalTitle(
     title
-      .replace(/\s*[\(\[【][^\)\]】]*[\)\]】]\s*/g, (m) => (/[a-z]{3}/i.test(m) ? " " : m)) // drop any bracket with words
+      .replace(/\.(wmv|mp4|avi|mov|mpe?g|flv|mkv)$/i, "") // uploads named after the file
+      .replace(/【[^】]*】/g, " ")
       .replace(/\s*[|•·]\s*.*$/, "") // "Title | Official Video"
       .replace(/\s*#[a-z_]\w*/gi, "") // hashtags ("#brunorisas"), but not "Marmellata #25"
+      .replace(/\s+(?:con\s+)?(?:testo|lyrics?|sub\s*ita|karaoke)\b.*$/i, "") // "Vivo per lei con testo"
       .replace(/[“”"']+$/, "")
       .replace(/\s+/g, " ")
       .trim(),
   );
 }
+
+/** A dash-separated part made only of these words is a lesson label, not a song or an artist. */
+const LESSON_WORDS =
+  /^(?:\s*(?:tutorial|lezione|lesson|chitarra|guitar|guitarra|accordi|chords|cover|karaoke|facile|easy|semplice|play-?along|tab|tabs|spartito|how to play|come suonare|testo|lyrics?|per|for|con|with|e|and|&|-)\s*)+$/i;
 
 /**
  * "Vasco Rossi - Albachiara (Official Video)" -> artist "Vasco Rossi", title "Albachiara".
@@ -117,7 +123,14 @@ export function parseVideoTitle(raw: string, channel: string): { title: string; 
   const quoted = cleaned.match(/^(.+?)\s*[:：]?\s*["“](.+?)["”]$/);
   if (quoted) return { artist: quoted[1].trim(), title: canonicalTitle(quoted[2]) };
 
-  const parts = cleaned.split(/\s+[-–—]\s+|\s*[:：]\s+/).map((p) => p.trim()).filter(Boolean);
+  // A dash needs a space on at least one side ("Title -Artist" happens); "Re-Recorded" stays one word.
+  const parts = cleaned
+    .split(/\s+[-–—]\s*|\s*[-–—]\s+|\s*[:：]\s+/)
+    .map((p) => cleanVideoTitle(p))
+    .filter((p) => p && !LESSON_WORDS.test(p));
+  if (parts.length < 2) {
+    return { artist: tidyCase(channelArtist), title: canonicalTitle(tidyCase(parts[0] ?? cleaned)) };
+  }
   if (parts.length >= 2) {
     const [a, b] = [parts[0], parts.slice(1).join(" - ")];
     // Default is "Artist - Title"; swap when the channel name clearly matches the second part.

@@ -91,6 +91,13 @@ export function artistSimilarity(wanted: string, found: string): number {
   return Math.max(similarity(wanted, found), similarity(primary, found));
 }
 
+/** True when a candidate fits the track better with title and artist exchanged ("Title - Artist" input). */
+export function fitsSwapped(track: { title: string; artist: string }, cand: { title: string; artist: string }): boolean {
+  const straight = 0.6 * similarity(track.title, cand.title) + 0.4 * artistSimilarity(track.artist, cand.artist);
+  const swapped = 0.6 * similarity(track.artist, cand.title) + 0.4 * artistSimilarity(track.title, cand.artist);
+  return swapped > straight + 0.15;
+}
+
 export function matchScore(
   track: { title: string; artist: string },
   cand: { title: string; artist: string },

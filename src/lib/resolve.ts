@@ -1,7 +1,7 @@
 import { fetchSheet, searchAll } from "./adapters";
 import { findLyrics } from "./lyrics";
 import { lyricsToChordPro, rawToChordPro } from "./sheet";
-import { canonicalTitle, primaryArtist } from "./text";
+import { canonicalTitle, fitsSwapped, primaryArtist } from "./text";
 import type { Candidate, Sheet, Track } from "./types";
 
 /** A match below this score is shown to the user as doubtful. */
@@ -12,9 +12,8 @@ const MIN_SCORE = 0.55;
 /** Find the best chord sheet for one track: search all sources, fetch the best, fall back down the list. */
 export async function resolveTrack(track: Track): Promise<Sheet> {
   // "Albachiara - Live 1990" by "Vasco Rossi, Fiorello" is the song "Albachiara" by "Vasco Rossi".
-  const title = canonicalTitle(track.title);
-  const artist = primaryArtist(track.artist);
-  const base = { trackId: track.id, title, artist, transpose: 0 };
+  let title = canonicalTitle(track.title);
+  let artist = primaryArtist(track.artist);
   let candidates: Candidate[] = [];
   try {
     candidates = await searchAll(title, artist);
@@ -24,9 +23,13 @@ export async function resolveTrack(track: Track): Promise<Sheet> {
       const seen = new Set(candidates.map((c) => c.url));
       candidates = [...candidates, ...more.filter((c) => !seen.has(c.url))].sort((a, b) => b.score - a.score);
     }
+    // A list written as "Title - Artist": the best match tells us, so print it the right way round.
+    const best = candidates[0];
+    if (best && best.score >= CONFIDENCE_THRESHOLD && fitsSwapped({ title, artist }, best)) [title, artist] = [artist, title];
   } catch (e) {
     console.warn("search failed", (e as Error).message);
   }
+  const base = { trackId: track.id, title, artist, transpose: 0 };
 
   for (const cand of candidates.filter((c) => c.score >= MIN_SCORE).slice(0, 4)) {
     try {
