@@ -9,17 +9,24 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^153.0.0",
+    "@vercel/functions": "^3.9.9",
+    "cheerio": "^1.2.0",
+    "chordsheetjs": "^17.0.0",
     "next": "16.3.6",
+    "puppeteer-core": "^25.12.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^19",
+    "@types/react": "^19.3.0",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "puppeteer": "^25.12.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
