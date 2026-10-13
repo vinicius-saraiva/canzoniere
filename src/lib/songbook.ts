@@ -15,6 +15,8 @@ export type SongbookOptions = {
   fontSize: number; // px for lyrics
   sortAlphabetically: boolean;
   notation: Notation;
+  /** Song text in one or two columns per page. */
+  columns: 1 | 2;
 };
 
 function esc(s: string): string {
@@ -76,6 +78,8 @@ export function songbookHtml(songs: SongbookSong[], opts: SongbookOptions): stri
   .fallback { white-space: pre-wrap; font-family: Menlo, monospace; font-size: ${opts.fontSize - 1}px; }
   /* ChordSheetJS HtmlDivFormatter output */
   .chord-sheet { font-family: Menlo, "Courier New", monospace; font-size: ${opts.fontSize}px; line-height: 1.25; }
+  /* Two columns: fill the left one to the bottom of the page before starting the right one. */
+  .chord-sheet { column-count: ${opts.columns}; column-gap: 8mm; column-fill: auto; }
   .chord-sheet .paragraph { margin-bottom: ${Math.round(opts.fontSize * 0.9)}px; break-inside: avoid; }
   .chord-sheet .row { display: flex; flex-wrap: wrap; align-items: flex-start; break-inside: avoid; }
   .chord-sheet .column { display: flex; flex-direction: column; }

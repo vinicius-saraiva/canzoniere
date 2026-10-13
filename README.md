@@ -10,7 +10,7 @@ Paste a Spotify playlist (or a list of songs), get a PDF songbook with chords an
    - Ultimate Guitar
    - Cifra Club (search works; song pages are often blocked at the CDN for server traffic)
 3. **Review**: every song shows its match, source link, other versions to switch to, transpose buttons, a preview, and a box to paste your own sheet. Songs with no chords fall back to lyrics-only via LRCLIB.
-4. **PDF**: sheets are normalized to ChordPro, rendered with ChordSheetJS, and printed to A4 with headless Chrome (cover, index, one song per page). Chords are named the Italian way by default (Do Re Mi, "Lam", "Re7+"); a switch in the review step gives C D E names instead.
+4. **PDF**: sheets are normalized to ChordPro, rendered with ChordSheetJS, and printed to A4 with headless Chrome (cover, index, one song per page, text in two columns by default). Chords are named the Italian way by default (Do Re Mi, "Lam", "Re7+"); a switch in the review step gives C D E names instead.
 
 ## Run locally
 

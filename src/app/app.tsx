@@ -244,6 +244,7 @@ function ReviewStep({
   const [fontSize, setFontSize] = useState(11);
   const [sortAlpha, setSortAlpha] = useState(true);
   const [notation, setNotation] = useState<Notation>(readNotation);
+  const [columns, setColumns] = useState<1 | 2>(2);
   const changeNotation = (n: Notation) => {
     setNotation(n);
     try {
@@ -323,7 +324,7 @@ function ReviewStep({
       const res = await fetch("/api/songbook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, fontSize, sortAlphabetically: sortAlpha, notation, songs }),
+        body: JSON.stringify({ title, fontSize, sortAlphabetically: sortAlpha, notation, columns, songs }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -377,6 +378,17 @@ function ReviewStep({
           >
             <option value="italian">Do Re Mi (Italian)</option>
             <option value="english">C D E (English)</option>
+          </select>
+        </label>
+        <label className="text-sm">
+          <span className="text-stone-600">Layout</span>
+          <select
+            value={columns}
+            onChange={(e) => setColumns(Number(e.target.value) === 1 ? 1 : 2)}
+            className="mt-1 block rounded-md border border-stone-300 px-3 py-2"
+          >
+            <option value={2}>Two columns</option>
+            <option value={1}>One column</option>
           </select>
         </label>
         <label className="flex items-center gap-2 pb-2 text-sm">

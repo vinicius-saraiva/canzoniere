@@ -10,6 +10,7 @@ const Body = z.object({
   fontSize: z.number().int().min(8).max(16).default(11),
   sortAlphabetically: z.boolean().default(true),
   notation: z.enum(["italian", "english"]).default("italian"),
+  columns: z.union([z.literal(1), z.literal(2)]).default(2),
   songs: z
     .array(
       z.object({
