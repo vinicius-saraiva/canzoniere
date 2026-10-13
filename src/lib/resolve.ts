@@ -1,6 +1,7 @@
 import { fetchSheet, searchAll } from "./adapters";
 import { findLyrics } from "./lyrics";
 import { lyricsToChordPro, rawToChordPro } from "./sheet";
+import { canonicalTitle, primaryArtist } from "./text";
 import type { Candidate, Sheet, Track } from "./types";
 
 /** A match below this score is shown to the user as doubtful. */
@@ -10,10 +11,19 @@ const MIN_SCORE = 0.55;
 
 /** Find the best chord sheet for one track: search all sources, fetch the best, fall back down the list. */
 export async function resolveTrack(track: Track): Promise<Sheet> {
-  const base = { trackId: track.id, title: track.title, artist: track.artist, transpose: 0 };
+  // "Albachiara - Live 1990" by "Vasco Rossi, Fiorello" is the song "Albachiara" by "Vasco Rossi".
+  const title = canonicalTitle(track.title);
+  const artist = primaryArtist(track.artist);
+  const base = { trackId: track.id, title, artist, transpose: 0 };
   let candidates: Candidate[] = [];
   try {
-    candidates = await searchAll(track.title, track.artist);
+    candidates = await searchAll(title, artist);
+    // A cleaned title that finds nothing good: retry with the original wording.
+    if (title !== track.title && !candidates.some((c) => c.score >= CONFIDENCE_THRESHOLD)) {
+      const more = await searchAll(track.title, artist);
+      const seen = new Set(candidates.map((c) => c.url));
+      candidates = [...candidates, ...more.filter((c) => !seen.has(c.url))].sort((a, b) => b.score - a.score);
+    }
   } catch (e) {
     console.warn("search failed", (e as Error).message);
   }
@@ -27,7 +37,7 @@ export async function resolveTrack(track: Track): Promise<Sheet> {
         status: "ok",
         source: cand.source,
         url: cand.url,
-        chordpro: rawToChordPro({ ...raw, title: track.title, artist: track.artist }),
+        chordpro: rawToChordPro({ ...raw, title, artist }),
         key: raw.key,
         capo: raw.capo,
         confidence: cand.score >= CONFIDENCE_THRESHOLD ? "good" : "doubtful",
@@ -38,12 +48,12 @@ export async function resolveTrack(track: Track): Promise<Sheet> {
     }
   }
 
-  const lyrics = await findLyrics(track.title, track.artist);
+  const lyrics = (await findLyrics(title, artist)) ?? (title !== track.title ? await findLyrics(track.title, artist) : null);
   if (lyrics) {
     return {
       ...base,
       status: "lyrics-only",
-      chordpro: lyricsToChordPro(track.title, track.artist, lyrics),
+      chordpro: lyricsToChordPro(title, artist, lyrics),
       confidence: "none",
       candidates,
     };
@@ -54,15 +64,17 @@ export async function resolveTrack(track: Track): Promise<Sheet> {
 /** Fetch one specific candidate the user picked in the review step. */
 export async function sheetFromCandidate(track: Track, cand: Candidate, candidates: Candidate[]): Promise<Sheet> {
   const raw = await fetchSheet(cand.source, cand.url);
+  const title = canonicalTitle(track.title);
+  const artist = primaryArtist(track.artist);
   return {
     trackId: track.id,
-    title: track.title,
-    artist: track.artist,
+    title,
+    artist,
     transpose: 0,
     status: "ok",
     source: cand.source,
     url: cand.url,
-    chordpro: rawToChordPro({ ...raw, title: track.title, artist: track.artist }),
+    chordpro: rawToChordPro({ ...raw, title, artist }),
     key: raw.key,
     capo: raw.capo,
     confidence: cand.score >= CONFIDENCE_THRESHOLD ? "good" : "doubtful",

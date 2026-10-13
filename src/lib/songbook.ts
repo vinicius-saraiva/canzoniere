@@ -1,4 +1,5 @@
 import { renderHtml } from "./sheet";
+import type { Notation } from "./text";
 
 export type SongbookSong = {
   title: string;
@@ -13,6 +14,7 @@ export type SongbookOptions = {
   title: string;
   fontSize: number; // px for lyrics
   sortAlphabetically: boolean;
+  notation: Notation;
 };
 
 function esc(s: string): string {
@@ -36,7 +38,7 @@ export function songbookHtml(songs: SongbookSong[], opts: SongbookOptions): stri
     .map((s, i) => {
       let body: string;
       try {
-        body = s.chordpro.trim() ? renderHtml(s.chordpro, s.transpose) : "<p class='note'>No sheet.</p>";
+        body = s.chordpro.trim() ? renderHtml(s.chordpro, s.transpose, opts.notation) : "<p class='note'>No sheet.</p>";
       } catch {
         body = `<pre class="fallback">${esc(s.chordpro)}</pre>`;
       }

@@ -14,6 +14,17 @@ const SOURCE_NAMES: Record<string, string> = {
 };
 
 const STORAGE_KEY = "canzoniere:state";
+const NOTATION_KEY = "canzoniere:notation";
+
+type Notation = "italian" | "english";
+
+function readNotation(): Notation {
+  try {
+    return localStorage.getItem(NOTATION_KEY) === "english" ? "english" : "italian";
+  } catch {
+    return "italian";
+  }
+}
 
 type State = { name: string; tracks: Track[]; sheets: Record<string, Sheet> };
 
@@ -232,6 +243,13 @@ function ReviewStep({
   const [title, setTitle] = useState(state.name);
   const [fontSize, setFontSize] = useState(11);
   const [sortAlpha, setSortAlpha] = useState(true);
+  const [notation, setNotation] = useState<Notation>(readNotation);
+  const changeNotation = (n: Notation) => {
+    setNotation(n);
+    try {
+      localStorage.setItem(NOTATION_KEY, n);
+    } catch {}
+  };
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const running = useRef(false);
@@ -305,7 +323,7 @@ function ReviewStep({
       const res = await fetch("/api/songbook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, fontSize, sortAlphabetically: sortAlpha, songs }),
+        body: JSON.stringify({ title, fontSize, sortAlphabetically: sortAlpha, notation, songs }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -350,6 +368,17 @@ function ReviewStep({
             ))}
           </select>
         </label>
+        <label className="text-sm">
+          <span className="text-stone-600">Chord names</span>
+          <select
+            value={notation}
+            onChange={(e) => changeNotation(e.target.value as Notation)}
+            className="mt-1 block rounded-md border border-stone-300 px-3 py-2"
+          >
+            <option value="italian">Do Re Mi (Italian)</option>
+            <option value="english">C D E (English)</option>
+          </select>
+        </label>
         <label className="flex items-center gap-2 pb-2 text-sm">
           <input type="checkbox" checked={sortAlpha} onChange={(e) => setSortAlpha(e.target.checked)} />
           Sort A–Z
@@ -376,7 +405,13 @@ function ReviewStep({
 
       <ul className="space-y-3">
         {state.tracks.map((t) => (
-          <SongRow key={t.id} track={t} sheet={state.sheets[t.id]} onChange={(p) => updateSheet(t.id, p)} />
+          <SongRow
+            key={t.id}
+            track={t}
+            sheet={state.sheets[t.id]}
+            notation={notation}
+            onChange={(p) => updateSheet(t.id, p)}
+          />
         ))}
       </ul>
     </div>
@@ -401,15 +436,17 @@ function missing(track: Track): Sheet {
 function SongRow({
   track,
   sheet,
+  notation,
   onChange,
 }: {
   track: Track;
   sheet?: Sheet;
+  notation: Notation;
   onChange: (patch: Partial<Sheet> | ((s: Sheet) => Sheet)) => void;
 }) {
   const [open, setOpen] = useState(false);
   // Preview HTML is keyed by the sheet content it was rendered from, so a stale preview never shows.
-  const previewKey = sheet ? `${sheet.transpose}|${sheet.chordpro}` : "";
+  const previewKey = sheet ? `${notation}|${sheet.transpose}|${sheet.chordpro}` : "";
   const [preview, setPreview] = useState<{ key: string; html: string } | null>(null);
   const html = preview && preview.key === previewKey ? preview.html : null;
   const [manual, setManual] = useState("");
@@ -422,7 +459,7 @@ function SongRow({
     fetch("/api/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chordpro: sheet.chordpro, transpose: sheet.transpose }),
+      body: JSON.stringify({ chordpro: sheet.chordpro, transpose: sheet.transpose, notation }),
     })
       .then((r) => r.json())
       .then((j) => {
@@ -431,7 +468,7 @@ function SongRow({
     return () => {
       cancelled = true;
     };
-  }, [open, sheet, previewKey]);
+  }, [open, sheet, previewKey, notation]);
 
   const pick = async (cand: Candidate) => {
     setSwitching(true);

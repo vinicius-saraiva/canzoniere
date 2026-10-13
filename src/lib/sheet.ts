@@ -1,4 +1,5 @@
 import ChordSheetJS, { type Song } from "chordsheetjs";
+import { applyNotationToHtml, type Notation } from "./text";
 import type { RawSheet } from "./types";
 
 const { ChordProParser, ChordProFormatter, ChordsOverWordsParser, UltimateGuitarParser, HtmlDivFormatter } =
@@ -40,12 +41,12 @@ export function parseChordPro(chordpro: string): Song {
   return new ChordProParser().parse(chordpro);
 }
 
-/** Render a ChordPro sheet to HTML, optionally transposed. */
-export function renderHtml(chordpro: string, transpose = 0): string {
+/** Render a ChordPro sheet to HTML, optionally transposed, with chords named in the chosen notation. */
+export function renderHtml(chordpro: string, transpose = 0, notation: Notation = "italian"): string {
   // The page prints its own title/artist header; keep the formatter from repeating them.
   let song = parseChordPro(chordpro.replace(/^\{(title|artist|subtitle|t|st):[^}]*\}\s*$/gim, ""));
   if (transpose) song = song.transpose(transpose);
-  return new HtmlDivFormatter().format(song);
+  return applyNotationToHtml(new HtmlDivFormatter().format(song), notation);
 }
 
 export function chordsIn(chordpro: string): string[] {
